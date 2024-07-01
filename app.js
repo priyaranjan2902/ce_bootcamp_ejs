@@ -1,21 +1,50 @@
-
-const express = require('express');
-const session = require('express-session');
-const cookieParser = require('cookie-parser');
-const bodyparser = require("body-parser");
 require("dotenv").config();
+const express = require('express');
+const bodyParser = require("body-parser");
+
+const mongoose = require("mongoose");
+const session = require('express-session');
+const passport = require("./config/passport");
+const app = express();
+// Express setup
+// app.use(express.static("public"));
+// app.use(express.static('public', {
+//     setHeaders: (res, path, stat) => {
+//       if (path.endsWith('.js')) {
+//         res.set('Content-Type', 'application/javascript');
+//       }
+//     }   
+//   }));
+app.set('view engine', 'ejs');
+app.use(bodyParser.urlencoded({ extended: true }));
+// Session setup
+app.use(session({
+    secret: "Our little secret.",
+    resave: true,
+    saveUninitialized: false,
+    cookie: { secure: false }
+  }));
+// Passport setup
+app.use(passport.initialize());
+app.use(passport.session());
+
+
+const flash = require('connect-flash');
+app.use(flash());
+mongoose.connect(process.env.MONGODB_URI);
+
+const cookieParser = require('cookie-parser');
 const PORT = process.env.PORT || 8080;
 
-const app = express();
+app.use(express.json())
+app.use(cookieParser())
 app.use(express.urlencoded({ extended: true }));
 
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
-app.use(bodyparser.urlencoded({
-    extended: true
-}))
 
-// const app = express(); 
+
+
 
 app.use(
     session({
@@ -30,28 +59,49 @@ app.use((req,res,next)=>{
     delete req.session.message;
     next();
 });
+app.get('/', (req, res) => { 
+    res.render('signin');   
+ }); 
+
+// use of body parser
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
    
+// const indexRoutes = require('./src/routes/index');
+const aboutRoutes=require('./src/routes/about');
+const authRoutes = require('./src/routes/auth');
+const batchRoutes=require('./src/routes/batch');
+const homeRoutes=require('./src/routes/home');
+const societyRoutes=require('./src/routes/society');
+const userRoutes=require('./src/routes/user');
+const uploadRoutes = require('./src/routes/upload');
+const AuthorisationRoutes=require('./src/routes/Authorisation');
+const {generateOTP}=require('./src/routes/generateOTP');
+const forgetPasswordController=require('./src/controllers/forgetPasswordController')
 
-const router = require("./src/routes");
-   
-app.use(express.json())
-app.use(cookieParser())
-app.use(router);
-// app.get('/', (req, res) => {
-//     res.render('signin');
-// });
-// instead use middleware
-app.use("",require('./src/routes/index'))
+// app.use('/', indexRoutes);
+app.use('/', aboutRoutes);
+app.use('/', authRoutes);
+app.use('/Auth',AuthorisationRoutes);
+app.use('/', batchRoutes);
+app.use('/', homeRoutes);
+app.use('/', societyRoutes);
+app.use('/', userRoutes);
+app.use("/", uploadRoutes);
+app.post('/generate-otp', generateOTP);
+app.get('/forgetpassword', forgetPasswordController.getForgetPasswordPage);
+app.post('/forgetPassword',forgetPasswordController.postForgetPassword);
 
 
-const mongoose = require("mongoose");
 
+// OTP verification 
+const OTP = require('./src/models/OTP');
 
 
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI);
+
 const db=mongoose.connection;
 db.once("open",()=>console.log("Connected to database"))
 

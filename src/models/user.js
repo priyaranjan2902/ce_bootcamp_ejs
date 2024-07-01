@@ -1,41 +1,39 @@
-const { default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 const { type } = require("os");
 const bcrypt=require('bcrypt');
+const passportLocalMongoose = require("passport-local-mongoose");
+var findOrCreate = require('mongoose-findorcreate');
 
 
 const userSchema = new mongoose.Schema({
   name: {
     type:String,
-    required:true
+    // required:true
   },
   collegeId:{
     type:String,
-    required:true,
+    // required:true,
   },
   email:{
     type:String,
-    required:true,
+    // required:true,
   },
   password:{
     type:String,
-    required:true,
+    // required:true,
   },
-  image:{
-    type:String,
+  passwordResetToken: {
+    type: String,
+    default: null
   },
+  passwordResetExpires: {
+    type: Date,
+    default: null
+  },  
   craeted:{
     type:Date,
     required:true,
-    default:Date.now,
-  },
-  is_admin:{
-    type:Number,
-    
-    default:0,
-  },
-  is_verified:{
-    type:Number,
-    default:0,
+    default:Date.now(),
   },
   place:{
     type:String,
@@ -52,10 +50,11 @@ const userSchema = new mongoose.Schema({
   github:{
     type:String
   },
-  profilePicture: {
+  img: {
     data: Buffer,
     contentType: String
   },
+  secret: String
 });
 
 userSchema.pre('save', async function(next){
@@ -69,7 +68,7 @@ userSchema.pre('save', async function(next){
       const salt = await bcrypt.genSalt(10);
 
       // hash password
-      const hashedPassword = await bcrypt.hash(user.password, salt);
+      const hashedPassword = bcrypt.hash(user.password, salt);
       
       // Override the plain password with the hashed one
       user.password = hashedPassword;
@@ -88,6 +87,9 @@ userSchema.methods.comparePassword = async function(candidatePassword){
       throw err;
   }
 }
+
+userSchema.plugin(passportLocalMongoose);
+userSchema.plugin(findOrCreate);
 
 
 module.exports=mongoose.model('User',userSchema);
