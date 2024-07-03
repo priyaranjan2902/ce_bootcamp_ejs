@@ -53,8 +53,8 @@ exports.signup = async (req, res) => {
 
     const token = generateToken(payload);
 
-    // res.status(200).json({ message: "Successfully created account, please login again" });
-    res.render('/');
+    res.status(200).json({ message: "Successfully created account, please login again" });
+    // res.render('/');
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal Server Error' });
